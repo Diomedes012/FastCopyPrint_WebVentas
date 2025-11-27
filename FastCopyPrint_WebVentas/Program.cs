@@ -5,6 +5,7 @@ using FastCopyPrint_WebVentas.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MudBlazor.Services;
 
 namespace FastCopyPrint_WebVentas
 {
@@ -24,6 +25,7 @@ namespace FastCopyPrint_WebVentas
             builder.Services.AddScoped<CategoriasService>();
             builder.Services.AddScoped<ProductosService>();
             builder.Services.AddScoped<VentasService>();
+            builder.Services.AddMudServices();
 
             builder.Services.AddAuthentication(options =>
                 {
@@ -34,7 +36,13 @@ namespace FastCopyPrint_WebVentas
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(connectionString),
+                contextLifetime: ServiceLifetime.Scoped,
+                optionsLifetime: ServiceLifetime.Singleton);
+
+            builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options =>

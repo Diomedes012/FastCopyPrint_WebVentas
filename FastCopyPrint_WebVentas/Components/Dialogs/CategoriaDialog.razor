@@ -1,0 +1,33 @@
+﻿@using FastCopyPrint_Ventas.Models
+@using MudBlazor
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Nombre" @bind-Value="Categoria.Nombre" Required="true" RequiredError="El nombre es obligatorio" />
+        <MudTextField T="string" Label="Descripción" @bind-Value="Categoria.Descripcion" Lines="3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Guardar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Categoria Categoria { get; set; } = new Categoria();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Categoria.Nombre))
+        {
+            Snackbar.Add("Debes escribir un nombre", Severity.Warning);
+            return;
+        }
+        
+        MudDialog.Close(DialogResult.Ok(Categoria));
+    }
+}
