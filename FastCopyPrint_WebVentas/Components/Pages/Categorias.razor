@@ -1,0 +1,192 @@
+﻿@page "/admin/categorias"
+
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using FastCopyPrint_WebVentas.Components.Dialogs
+@using MudBlazor
+
+@inject CategoriasService categoriasService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <div class="d-flex justify-content-between align-center mb-4">
+        <MudText Typo="Typo.h4">Gestión de Categorías</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirCrear">
+            Nueva Categoría
+        </MudButton>
+    </div>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudTable Items="@listaCategorias"
+                  Dense="true"
+                  Hover="true"
+                  Striped="true"
+                  Elevation="4"
+                  Filter="new Func<Categoria, bool>(Filtrar)">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Color="Color.Primary">
+                    <MudIcon Icon="@Icons.Material.Filled.Category" Class="mr-2 mb-n1" />
+                    Catálogo
+                </MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="textoBusqueda" Placeholder="Buscar categoría..."
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0" />
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<Categoria, object>(x => x.CategoriaId)">ID</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Categoria, object>(x => x.Nombre)">Nombre</MudTableSortLabel></MudTh>
+                <MudTh>Descripción</MudTh>
+                <MudTh Style="text-align:center">Acciones</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="ID"><strong>@context.CategoriaId</strong></MudTd>
+                <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+                <MudTd DataLabel="Descripción">
+                    <MudText Typo="Typo.body2" Style="max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        @context.Descripcion
+                    </MudText>
+                </MudTd>
+                <MudTd DataLabel="Acciones" Style="text-align:center">
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Outlined"
+                                       Color="Color.Primary" Size="Size.Small" OnClick="@(() => AbrirEditar(context))" Class="mr-2" />
+                    </MudTooltip>
+                    <MudTooltip Text="Eliminar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined"
+                                       Color="Color.Error" Size="Size.Small" OnClick="@(() => Eliminar(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 5, 10, 20 }" />
+            </PagerContent>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<Categoria> listaCategorias = new();
+    private bool cargando = true;
+    private string textoBusqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        try
+        {
+            cargando = true;
+            listaCategorias = await categoriasService.Listar(x => true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar datos: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private bool Filtrar(Categoria cat)
+    {
+        if (string.IsNullOrWhiteSpace(textoBusqueda)) return true;
+
+        if (cat.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+        if (cat.Descripcion != null && cat.Descripcion.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+
+        return false;
+    }
+
+    private async Task AbrirDialogo(Categoria modelo, string titulo)
+    {
+        var parameters = new DialogParameters<CategoriaDialog>
+        {
+            { x => x.Categoria, modelo }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<CategoriaDialog>(titulo, parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var data = result.Data as Categoria;
+            if (data != null)
+            {
+                var exito = await categoriasService.Guardar(data);
+                if (exito)
+                {
+                    Snackbar.Add("Guardado correctamente", Severity.Success);
+                    await CargarDatos();
+                }
+                else
+                {
+                    Snackbar.Add("Error al guardar", Severity.Error);
+                }
+            }
+        }
+    }
+
+    private async Task AbrirCrear()
+    {
+        await AbrirDialogo(new Categoria(), "Crear Categoría");
+    }
+
+    private async Task AbrirEditar(Categoria cat)
+    {
+        var copia = new Categoria
+        {
+            CategoriaId = cat.CategoriaId,
+            Nombre = cat.Nombre,
+            Descripcion = cat.Descripcion
+        };
+        await AbrirDialogo(copia, "Editar Categoría");
+    }
+
+    private async Task Eliminar(Categoria cat)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        var parameters = new DialogParameters<ConfirmarEliminacionDialog>
+        {
+            { x => x.Mensaje, cat.Nombre }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmarEliminacionDialog>("Eliminar", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var eliminado = await categoriasService.Eliminar(cat.CategoriaId);
+            if (eliminado)
+            {
+                Snackbar.Add("Categoría eliminada", Severity.Success);
+                await CargarDatos();
+            }
+            else
+            {
+                Snackbar.Add("No se puede eliminar: Probablemente tiene productos asociados.", Severity.Error);
+            }
+        }
+    }
+}

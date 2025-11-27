@@ -1,0 +1,63 @@
+﻿@page "/lib"
+@using FastCopyPrint_Ventas.Models
+@inject FastCopyPrint_WebVentas.Services.ProductosService productosService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <div class="d-flex justify-content-end align-center mb-4">
+        <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mr-4">Ayuda</MudButton>
+
+        <MudBadge Content="3" Color="Color.Error" Overlap="true" Class="mx-2">
+            <MudFab StartIcon="@Icons.Material.Filled.ShoppingCart" Label="Tu Carrito" Color="Color.Primary" Size="Size.Medium" Href="/carrito" />
+        </MudBadge>
+    </div>
+
+    <MudCarousel Class="mud-width-full mb-8" Style="height:300px;" ShowArrows="true" ShowBullets="true" AutoCycle="true" TData="object">
+        <MudCarouselItem Transition="Transition.Slide" Color="@Color.Primary">
+            <div class="d-flex flex-column justify-center align-center" style="height:100%">
+                <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Size="Size.Large" />
+                <MudText Typo="Typo.h4" Class="mt-2">¡Ofertas de Temporada!</MudText>
+            </div>
+        </MudCarouselItem>
+    </MudCarousel>
+
+    <MudText Typo="Typo.h5" Class="mb-4">Productos Destacados</MudText>
+
+    <MudGrid Spacing="4">
+        @foreach (var prod in productos)
+        {
+            <MudItem xs="12" sm="6" lg="3">
+                <MudCard Elevation="3" Class="h-100 d-flex flex-column">
+                    <MudCardMedia Image="https://dummyimage.com/450x300/dee2e6/6c757d.jpg" Height="200" />
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">@prod.Nombre</MudText>
+                        <MudText Typo="Typo.subtitle1" Color="Color.Primary"><b>$@prod.Precio</b></MudText>
+                        <MudText Typo="Typo.body2" Class="mt-1">@prod.Descripcion</MudText>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.AddShoppingCart">
+                            Agregar
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Producto> productos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        productos = await productosService.Listar(p => true);
+
+        if (!productos.Any())
+        {
+            productos.Add(new Producto { Nombre = "Resma Papel Bond", Precio = 450, Descripcion = "Alta blancura" });
+            productos.Add(new Producto { Nombre = "Lapiceros Azul", Precio = 25, Descripcion = "Caja x12" });
+            productos.Add(new Producto { Nombre = "Folder 8x11", Precio = 15, Descripcion = "Manila standard" });
+            productos.Add(new Producto { Nombre = "Marcador Permanente", Precio = 60, Descripcion = "Punta gruesa negro" });
+        }
+    }
+}
