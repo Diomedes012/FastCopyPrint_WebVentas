@@ -1,6 +1,7 @@
 using FastCopyPrint_WebVentas.Components;
 using FastCopyPrint_WebVentas.Components.Account;
 using FastCopyPrint_WebVentas.Data;
+using FastCopyPrint_WebVentas.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,9 @@ namespace FastCopyPrint_WebVentas
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IdentityRedirectManager>();
             builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+            builder.Services.AddScoped<CategoriasService>();
+            builder.Services.AddScoped<ProductosService>();
+            builder.Services.AddScoped<VentasService>();
 
             builder.Services.AddAuthentication(options =>
                 {
