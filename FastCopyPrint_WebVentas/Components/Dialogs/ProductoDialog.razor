@@ -1,0 +1,187 @@
+﻿@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using MudBlazor
+@using Microsoft.AspNetCore.Hosting 
+@using System.IO
+
+@inject CategoriasService categoriasService
+@inject ISnackbar Snackbar
+@inject IWebHostEnvironment Environment
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Nombre" @bind-Value="Producto.Nombre" 
+                              Required="true" Variant="Variant.Outlined" Margin="Margin.Dense"/>
+                
+                <MudTextField T="string" Label="Descripción" @bind-Value="Producto.Descripcion" 
+                              Lines="3" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3"/>
+                
+                <MudSelect T="int?" Label="Categoría" @bind-Value="Producto.CategoriaId" 
+                           Variant="Variant.Outlined" Margin="Margin.Dense" Class="mt-3" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem T="int?" Value="null">Sin Categoría</MudSelectItem>
+                    @foreach (var cat in listaCategorias)
+                    {
+                        <MudSelectItem T="int?" Value="@cat.CategoriaId">@cat.Nombre</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudNumericField @bind-Value="Producto.Precio" Label="Precio" Variant="Variant.Outlined" 
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" 
+                                 Margin="Margin.Dense" Class="mt-3" />
+
+                <MudNumericField @bind-Value="Producto.Stock" Label="Stock" Variant="Variant.Outlined" 
+                                 Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Inventory" 
+                                 Margin="Margin.Dense" Class="mt-3" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" Class="d-flex flex-column align-center justify-center">
+                
+                <MudPaper Class="d-flex align-center justify-center mud-width-full mb-3" 
+                          Elevation="0" Outlined="true" Style="height: 200px; background-color: var(--mud-palette-background-grey);">
+                    @if (!string.IsNullOrEmpty(imagenPrevisualizacion))
+                    {
+                        <MudImage Src="@imagenPrevisualizacion" ObjectFit="ObjectFit.Cover" Style="width:100%; height:100%;" />
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Image" Size="Size.Large" Color="Color.Default" />
+                            <MudText Typo="Typo.caption">Sin imagen</MudText>
+                        </div>
+                    }
+                </MudPaper>
+
+                <MudFileUpload T="IBrowserFile" FilesChanged="SubirImagen">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload">
+                            Subir Imagen
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+                
+                <MudText Typo="Typo.caption" Class="mt-2 text-center">
+                    Formatos: JPG, PNG. Máx 5MB.
+                </MudText>
+
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Guardar" Disabled="@procesandoImagen">
+            @if (procesandoImagen)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                <MudText Class="ms-2">Procesando...</MudText>
+            }
+            else
+            {
+                <MudText>Guardar Producto</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public Producto Producto { get; set; } = new Producto { EstaActivo = true };
+
+    private List<Categoria> listaCategorias = new();
+    
+    private string imagenPrevisualizacion;
+    private IBrowserFile? archivoSubido;
+    private bool procesandoImagen = false;
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5 MB
+
+    protected override async Task OnInitializedAsync()
+    {
+        listaCategorias = await categoriasService.Listar(c => true);
+        
+        if (!string.IsNullOrEmpty(Producto.ImagenUrl))
+        {
+            imagenPrevisualizacion = Producto.ImagenUrl;
+        }
+    }
+
+    private async Task SubirImagen(IBrowserFile archivo)
+    {
+        if (archivo == null) return;
+
+        if (archivo.Size > MaxFileSize)
+        {
+            Snackbar.Add("La imagen es muy pesada (Máx 5MB)", Severity.Error);
+            return;
+        }
+        
+        var formatosPermitidos = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!formatosPermitidos.Contains(archivo.ContentType))
+        {
+            Snackbar.Add("Solo se permiten imágenes (JPG, PNG, WEBP)", Severity.Error);
+            return;
+        }
+
+        try 
+        {
+            procesandoImagen = true;
+            archivoSubido = archivo;
+
+            var buffer = new byte[archivo.Size];
+            await archivo.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+            imagenPrevisualizacion = $"data:{archivo.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        }
+        catch(Exception ex)
+        {
+            Snackbar.Add($"Error al leer imagen: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            procesandoImagen = false;
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (string.IsNullOrWhiteSpace(Producto.Nombre))
+        {
+            Snackbar.Add("El nombre es obligatorio", Severity.Warning);
+            return;
+        }
+
+        procesandoImagen = true;
+
+        try
+        {
+            if (archivoSubido != null)
+            {
+                var carpetaDestino = Path.Combine(Environment.WebRootPath, "imagenes_productos");
+                
+                if (!Directory.Exists(carpetaDestino)) Directory.CreateDirectory(carpetaDestino);
+
+                var extension = Path.GetExtension(archivoSubido.Name);
+                var nombreArchivo = $"{Guid.NewGuid()}{extension}";
+                var rutaCompleta = Path.Combine(carpetaDestino, nombreArchivo);
+
+                await using var streamArchivo = new FileStream(rutaCompleta, FileMode.Create);
+                await archivoSubido.OpenReadStream(MaxFileSize).CopyToAsync(streamArchivo);
+
+                Producto.ImagenUrl = $"/imagenes_productos/{nombreArchivo}";
+            }
+
+            MudDialog.Close(DialogResult.Ok(Producto));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al guardar imagen: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            procesandoImagen = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}
