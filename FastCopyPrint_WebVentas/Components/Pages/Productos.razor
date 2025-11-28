@@ -1,0 +1,213 @@
+﻿@page "/admin/productos"
+
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using FastCopyPrint_WebVentas.Components.Dialogs
+@using MudBlazor
+
+@inject ProductosService productosService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <div class="d-flex justify-content-between align-center mb-4">
+        <MudText Typo="Typo.h4">Inventario de Productos</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirCrear">
+            Nuevo Producto
+        </MudButton>
+    </div>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudTable Items="@listaProductos" Dense="true" Hover="true" Striped="true" Elevation="4"
+                  Filter="new Func<Producto, bool>(Filtrar)">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Color="Color.Primary"><MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="mr-2 mb-n1" /> Listado</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="textoBusqueda" Placeholder="Buscar producto..."
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0" />
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>Imagen</MudTh> <MudTh><MudTableSortLabel SortBy="new Func<Producto, object>(x => x.Nombre)">Producto</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Producto, object>(x => x.CategoriaId)">Categoría</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Producto, object>(x => x.Precio)">Precio</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<Producto, object>(x => x.Stock)">Stock</MudTableSortLabel></MudTh>
+                <MudTh>Estado</MudTh>
+                <MudTh Style="text-align:center">Acciones</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>
+                    @if (!string.IsNullOrEmpty(context.ImagenUrl))
+                    {
+                        <MudImage Src="@context.ImagenUrl" Height="40" Width="40" ObjectFit="ObjectFit.Cover" Class="rounded" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.ImageNotSupported" Size="Size.Medium" Color="Color.Default" />
+                    }
+                </MudTd>
+
+                <MudTd DataLabel="Producto">
+                    <MudText Typo="Typo.body2"><strong>@context.Nombre</strong></MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Default">@context.Descripcion</MudText>
+                </MudTd>
+
+                <MudTd DataLabel="Categoría">
+                    @if (context.Categoria != null)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@context.Categoria.Nombre</MudChip>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption">Sin Categoría</MudText>
+                    }
+                </MudTd>
+
+                <MudTd DataLabel="Precio">@context.Precio.ToString("C2")</MudTd>
+
+                <MudTd DataLabel="Stock">
+                    @if (context.Stock <= 5)
+                    {
+                        <MudChip T="string" Color="Color.Error" Size="Size.Small">@context.Stock (Bajo)</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Variant="Variant.Outlined">@context.Stock</MudChip>
+                    }
+                </MudTd>
+
+                <MudTd DataLabel="Estado">
+                    <MudSwitch T="bool" Value="@context.EstaActivo" Color="Color.Primary" ReadOnly="true" Size="Size.Small" />
+                </MudTd>
+
+                <MudTd DataLabel="Acciones" Style="text-align:center">
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="@(() => AbrirEditar(context))" Class="mr-2" />
+                    </MudTooltip>
+                    <MudTooltip Text="Eliminar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="@(() => Eliminar(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<Producto> listaProductos = new();
+    private bool cargando = true;
+    private string textoBusqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        try
+        {
+            cargando = true;
+            listaProductos = await productosService.Listar(x => true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private bool Filtrar(Producto prod)
+    {
+        if (string.IsNullOrWhiteSpace(textoBusqueda)) return true;
+        if (prod.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+        if (prod.Categoria?.Nombre != null && prod.Categoria.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+        return false;
+    }
+
+    private async Task AbrirDialogo(Producto modelo, string titulo)
+    {
+        var parameters = new DialogParameters<ProductoDialog> { { x => x.Producto, modelo } };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<ProductoDialog>(titulo, parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var data = result.Data as Producto;
+            if (data != null)
+            {
+                var exito = await productosService.Guardar(data);
+                if (exito)
+                {
+                    Snackbar.Add("Producto guardado", Severity.Success);
+                    await CargarDatos();
+                }
+                else
+                {
+                    Snackbar.Add("Error al guardar", Severity.Error);
+                }
+            }
+        }
+    }
+
+    private async Task AbrirCrear()
+    {
+        await AbrirDialogo(new Producto { EstaActivo = true }, "Nuevo Producto");
+    }
+
+    private async Task AbrirEditar(Producto prod)
+    {
+        var copia = new Producto
+        {
+            ProductoId = prod.ProductoId,
+            Nombre = prod.Nombre,
+            Descripcion = prod.Descripcion,
+            Precio = prod.Precio,
+            Stock = prod.Stock,
+            CategoriaId = prod.CategoriaId,
+            ImagenUrl = prod.ImagenUrl,
+            EstaActivo = prod.EstaActivo
+        };
+        await AbrirDialogo(copia, "Editar Producto");
+    }
+
+    private async Task Eliminar(Producto prod)
+    {
+        var parameters = new DialogParameters<ConfirmarEliminacionDialog> { { x => x.Mensaje, prod.Nombre } };
+        var dialog = await DialogService.ShowAsync<ConfirmarEliminacionDialog>("Eliminar", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var eliminado = await productosService.Eliminar(prod.ProductoId);
+            if (eliminado)
+            {
+                Snackbar.Add("Producto eliminado", Severity.Success);
+                await CargarDatos();
+            }
+            else
+            {
+                Snackbar.Add("No se puede eliminar (probablemente tiene ventas)", Severity.Error);
+            }
+        }
+    }
+}
