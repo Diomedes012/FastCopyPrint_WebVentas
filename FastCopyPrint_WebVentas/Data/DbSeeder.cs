@@ -34,6 +34,30 @@ public static class DbSeeder
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
         }
+        await SeedMetodosPagoAsync(service);
+    }
+    public static async Task SeedMetodosPagoAsync(IServiceProvider service)
+    {
+       
+        var context = service.GetRequiredService<ApplicationDbContext>();
+
+        if (!await context.MetodosPago.AnyAsync())
+        {
+            context.MetodosPago.AddRange(
+                new MetodoPago
+                {
+                    Nombre = "Tarjeta",
+                    Descripcion = "Pago procesado vía tarjeta de Crédito/Débito"
+                },
+                new MetodoPago
+                {
+                    Nombre = "Efectivo",
+                    Descripcion = "Pago contra entrega en el local o domicilio"
+                }
+            );
+
+            await context.SaveChangesAsync();
+        }
     }
 
     private static async Task CheckCreateRole(RoleManager<IdentityRole> roleManager, string roleName)
