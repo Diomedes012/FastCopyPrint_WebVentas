@@ -1,0 +1,185 @@
+﻿@page "/admin/ventas"
+
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using FastCopyPrint_WebVentas.Components.Dialogs
+@using MudBlazor
+
+@inject VentasService ventasService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+
+    <MudText Typo="Typo.h4" Class="mb-4">Historial de Ventas</MudText>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudTable Items="@listaVentas" Dense="true" Hover="true" Striped="true" Elevation="4"
+                  Filter="new Func<Venta, bool>(Filtrar)">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Color="Color.Primary">
+                    <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2 mb-n1" /> Transacciones
+                </MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="textoBusqueda" Placeholder="Buscar por cliente o factura..."
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium" Class="mt-0" />
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Fecha</MudTh>
+                <MudTh>Cliente</MudTh>
+                <MudTh>Vendedor</MudTh>
+                <MudTh>Total</MudTh>
+                <MudTh>Estado</MudTh>
+                <MudTh Style="text-align:center">Acciones</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.VentaId</MudTd>
+                <MudTd DataLabel="Fecha">@context.FechaVenta.ToString("dd/MM/yyyy HH:mm")</MudTd>
+
+                <MudTd DataLabel="Cliente">
+                    @if (context.Cliente != null)
+                    {
+                        <MudText Typo="Typo.body2">@context.Cliente.Usuario?.Nombre</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Class="text-muted">Mostrador</MudText>
+                    }
+                </MudTd>
+
+                <MudTd DataLabel="Vendedor">@context.Vendedor?.Nombre</MudTd>
+
+                <MudTd DataLabel="Total">
+                    <strong>@context.TotalVenta.ToString("C2")</strong>
+                </MudTd>
+
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@GetColorEstado(context.EstadoVenta)" Size="Size.Small">
+                        @context.EstadoVenta
+                    </MudChip>
+                </MudTd>
+
+                <MudTd DataLabel="Acciones" Style="text-align:center">
+                    <MudTooltip Text="Ver Detalles">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Variant="Variant.Outlined"
+                                       Color="Color.Info" Size="Size.Small" OnClick="@(() => VerDetalles(context))" Class="mr-2" />
+                    </MudTooltip>
+
+                    <MudTooltip Text="Anular Venta (Devolver Stock)">
+                        <MudIconButton Icon="@Icons.Material.Filled.RemoveShoppingCart" Variant="Variant.Outlined"
+                                       Color="Color.Error" Size="Size.Small" OnClick="@(() => AnularVenta(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<Venta> listaVentas = new();
+    private bool cargando = true;
+    private string textoBusqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        try
+        {
+            cargando = true;
+            listaVentas = await ventasService.Listar(v => true);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar ventas: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+    private bool Filtrar(Venta venta)
+    {
+        if (string.IsNullOrWhiteSpace(textoBusqueda)) return true;
+
+        // Buscamos por ID, Nombre de Cliente o Nombre de Vendedor
+        if (venta.VentaId.ToString().Contains(textoBusqueda)) return true;
+        if (venta.Cliente?.Usuario?.Nombre != null && venta.Cliente.Usuario.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+        if (venta.Vendedor?.Nombre != null && venta.Vendedor.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+
+        return false;
+    }
+
+    private Color GetColorEstado(string estado)
+    {
+        return estado switch
+        {
+            "Completada" => Color.Success,
+            "Anulada" => Color.Error,
+            "Pendiente" => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+
+    private async Task VerDetalles(Venta venta)
+    {
+        //Necesitamos cargar los detalles completos si no vinieron en el Listar inicial
+        var ventaCompleta = await ventasService.Buscar(venta.VentaId);
+
+        if (ventaCompleta != null)
+        {
+            var parameters = new DialogParameters<DetalleVentaDialog> { { x => x.Venta, ventaCompleta } };
+            var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+
+            await DialogService.ShowAsync<DetalleVentaDialog>($"Factura #{venta.VentaId}", parameters, options);
+        }
+    }
+
+    private async Task AnularVenta(Venta venta)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Anular Venta",
+            $"⚠️ ¡Cuidado! Esta acción eliminará la venta #{venta.VentaId} y DEVOLVERÁ los productos al inventario.\n\n¿Estás seguro?",
+            yesText: "Sí, Anular y Devolver Stock", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            try
+            {
+                var anulado = await ventasService.Eliminar(venta.VentaId);
+
+                if (anulado)
+                {
+                    Snackbar.Add("Venta anulada y stock restaurado", Severity.Success);
+                    await CargarDatos();
+                }
+                else
+                {
+                    Snackbar.Add("No se pudo anular la venta", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error crítico: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}

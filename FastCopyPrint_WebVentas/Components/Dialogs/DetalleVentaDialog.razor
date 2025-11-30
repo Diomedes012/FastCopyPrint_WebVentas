@@ -1,0 +1,59 @@
+﻿@using FastCopyPrint_Ventas.Models
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid Class="mb-4">
+            <MudItem xs="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Cliente</MudText>
+                <MudText Typo="Typo.body1"><b>@(Venta.Cliente?.Usuario?.Nombre ?? "Cliente General")</b></MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Fecha</MudText>
+                <MudText Typo="Typo.body1">@Venta.FechaVenta.ToString("g")</MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Atendido por</MudText>
+                <MudText Typo="Typo.body2">@Venta.Vendedor?.Nombre</MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Método Pago</MudText>
+                <MudText Typo="Typo.body2">@(Venta.MetodoPago?.Nombre ?? "Efectivo")</MudText>
+            </MudItem>
+        </MudGrid>
+
+        <MudTable Items="@Venta.Detalles" Dense="true" Hover="true" Elevation="0" Outlined="true">
+            <HeaderContent>
+                <MudTh>Producto</MudTh>
+                <MudTh Style="text-align:right">Cant.</MudTh>
+                <MudTh Style="text-align:right">Precio Unit.</MudTh>
+                <MudTh Style="text-align:right">Subtotal</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Producto?.Nombre</MudTd>
+                <MudTd Style="text-align:right">@context.Cantidad</MudTd>
+                <MudTd Style="text-align:right">@context.PrecioUnitario.ToString("C2")</MudTd>
+                <MudTd Style="text-align:right">
+                    <strong>@((context.Cantidad * context.PrecioUnitario).ToString("C2"))</strong>
+                </MudTd>
+            </RowTemplate>
+            <FooterContent>
+                <MudTd colspan="3" Style="text-align:right"><strong>TOTAL:</strong></MudTd>
+                <MudTd Style="text-align:right">
+                    <MudText Color="Color.Primary" Typo="Typo.h6">@Venta.TotalVenta.ToString("C2")</MudText>
+                </MudTd>
+            </FooterContent>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cerrar" Color="Color.Primary">Cerrar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Venta Venta { get; set; } = new();
+
+    private void Cerrar() => MudDialog.Cancel();
+}
