@@ -1,0 +1,147 @@
+﻿@page "/admin/dashboard"
+
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using FastCopyPrint_Ventas.Models
+@using MudBlazor
+
+@inject DashboardService dashboardService
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
+
+    <MudText Typo="Typo.h4" Class="mb-4"><b>Dashboard General</b></MudText>
+
+    @if (isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+        <MudText Align="Align.Center">Calculando métricas...</MudText>
+    }
+    else
+    {
+        <MudGrid Class="mb-4">
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="d-flex flex-row pt-6 pb-4" Style="height:100px;" Elevation="3">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Success" Class="mx-4" Style="width:54px; height:54px;"></MudIcon>
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">Ventas Hoy</MudText>
+                        <MudText Typo="Typo.h5"><b>@data.VentasHoy.ToString("C2")</b></MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="d-flex flex-row pt-6 pb-4" Style="height:100px;" Elevation="3">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Color="Color.Info" Class="mx-4" Style="width:54px; height:54px;"></MudIcon>
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">Acumulado Mes</MudText>
+                        <MudText Typo="Typo.h5"><b>@data.VentasMes.ToString("C0")</b></MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" sm="12" md="4">
+                <MudPaper Class="d-flex flex-row pt-6 pb-4" Style="height:100px;" Elevation="3">
+                    <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Color="Color.Warning" Class="mx-4" Style="width:54px; height:54px;"></MudIcon>
+                    <div>
+                        <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">Stock Bajo</MudText>
+                        <MudText Typo="Typo.h5" Color="Color.Warning"><b>@data.ProductosBajoStock prod.</b></MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        <MudGrid>
+            <MudItem xs="12" md="8">
+                <MudPaper Class="pa-4" Style="height: 450px;" Elevation="3">
+                    <MudText Typo="Typo.h6" Class="mb-4">Tendencia Semanal (Ingresos)</MudText>
+                    <MudChart ChartType="ChartType.Bar"
+                              ChartSeries="@Series"
+                              XAxisLabels="@data.EtiquetasGrafico"
+                              Width="100%"
+                              Height="350px">
+                    </MudChart>
+                </MudPaper>
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4" Style="height: 450px; overflow-y: auto;" Elevation="3">
+                    <MudText Typo="Typo.h6" Class="mb-4">Últimas Ventas</MudText>
+
+                    @if (data.UltimasVentas.Any())
+                    {
+                        <MudList T="string" Clickable="true">
+                            @foreach (var venta in data.UltimasVentas)
+                            {
+                                <MudListItem Icon="@Icons.Material.Filled.ShoppingBag" IconColor="Color.Primary">
+                                    <div class="d-flex justify-space-between align-center w-100">
+                                        <div>
+                                            <MudText Typo="Typo.body2">
+                                                @(venta.Cliente?.Usuario?.Nombre ?? "Cliente Mostrador")
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                                @venta.FechaVenta.ToString("dd MMM - HH:mm")
+                                            </MudText>
+                                        </div>
+                                        <MudText Typo="Typo.body2" Color="Color.Success">
+                                            <b>@venta.TotalVenta.ToString("C0")</b>
+                                        </MudText>
+                                    </div>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column align-center justify-center h-100">
+                            <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Size="Size.Large" Color="Color.Default" />
+                            <MudText Typo="Typo.body2" Class="mt-2 text-muted">No hay ventas registradas aún.</MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private bool isLoading = true;
+    private ResumenVentas data = new();
+
+    // Configuración para el MudChart
+    public List<ChartSeries> Series = new List<ChartSeries>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        isLoading = true;
+        
+        try
+        {
+            data = await dashboardService.ObtenerMetricas();
+
+            // Configurar el gráfico
+            Series.Clear();
+            Series.Add(new ChartSeries()
+            {
+                Name = "Ventas ($)",
+                Data = data.DatosGrafico
+            });
+        }
+        catch (Exception ex)
+        {
+            // En caso de error, inicializamos vacío para que no rompa la UI
+            data = new ResumenVentas();
+            Console.WriteLine($"Error Dashboard: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
