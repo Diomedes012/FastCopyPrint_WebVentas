@@ -1,0 +1,169 @@
+﻿@page "/catalogo"
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using MudBlazor
+
+@inject CatalogoService catalogoService
+@inject CarritoService CarritoService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <div class="d-flex justify-content-end align-center mb-4">
+        <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mr-4">Ayuda</MudButton>
+
+        <MudBadge Content="@cantidadItemsCarrito" Color="Color.Error" Overlap="true" Class="mx-2" Visible="@(cantidadItemsCarrito > 0)">
+            <MudFab StartIcon="@Icons.Material.Filled.ShoppingCart"
+                    Label="Tu Carrito"
+                    Color="Color.Primary"
+                    Size="Size.Medium"
+                    OnClick="IrAlCarrito" />
+        </MudBadge>
+    </div>
+
+    <MudCarousel Class="mud-width-full mb-8 rounded-lg" Style="height:300px;" ShowArrows="true" ShowBullets="true" AutoCycle="true" TData="object">
+        <MudCarouselItem Transition="Transition.Slide" Color="@Color.Primary">
+            <div class="d-flex flex-column justify-center align-center" style="height:100%">
+                <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Size="Size.Large" Style="font-size: 4rem;" />
+                <MudText Typo="Typo.h3" Class="mt-4"><b>¡Ofertas de Temporada!</b></MudText>
+                <MudText Typo="Typo.h6">Descuentos en papelería al por mayor</MudText>
+            </div>
+        </MudCarouselItem>
+        <MudCarouselItem Transition="Transition.Fade" Color="@Color.Secondary">
+            <div class="d-flex flex-column justify-center align-center" style="height:100%">
+                <MudIcon Icon="@Icons.Material.Filled.Print" Size="Size.Large" Style="font-size: 4rem;" />
+                <MudText Typo="Typo.h3" Class="mt-4"><b>Impresiones Rápidas</b></MudText>
+                <MudText Typo="Typo.h6">Envía tu archivo y recoge en tienda</MudText>
+            </div>
+        </MudCarouselItem>
+    </MudCarousel>
+
+    <MudText Typo="Typo.h4" Class="mb-4" Color="Color.Dark"><b>Productos Destacados</b></MudText>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-5" />
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            @foreach (var prod in productos)
+            {
+                <MudItem xs="12" sm="6" lg="3">
+                    <MudCard Elevation="4" Class="h-100 d-flex flex-column hover-zoom">
+                        <MudCardMedia Image="@(string.IsNullOrEmpty(prod.ImagenUrl) ? "https://dummyimage.com/450x300/dee2e6/6c757d.jpg" : prod.ImagenUrl)" Height="200" />
+
+                        <MudCardContent Class="flex-grow-1">
+                            <MudText Typo="Typo.h6" Style="font-weight: bold;">@prod.Nombre</MudText>
+                            <MudText Typo="Typo.h5" Color="Color.Primary" Class="mt-1">
+                                <b>$@prod.Precio.ToString("N2")</b>
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mt-2 text-muted" Lines="2">
+                                @prod.Descripcion
+                            </MudText>
+                        </MudCardContent>
+
+                        <MudCardActions Class="pa-4 pt-0">
+                            <MudTooltip Text="Ver Detalles">
+                                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                               Color="Color.Default"
+                                               OnClick="@(() => VerDetalle(prod.ProductoId))" />
+                            </MudTooltip>
+
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.AddShoppingCart"
+                                       OnClick="@(() => AgregarAlCarrito(prod))"
+                                       Class="ml-2">
+                                Agregar
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
+
+<style>
+    .hover-zoom {
+        transition: transform 0.2s;
+    }
+
+        .hover-zoom:hover {
+            transform: translateY(-5px);
+        }
+</style>
+
+@code {
+    private List<Producto> productos = new();
+    private bool cargando = true;
+    private int cantidadItemsCarrito = 0;
+    private int clienteId = 1; //⚠️ Simulación de usuario logueado
+
+    protected override async Task OnInitializedAsync()
+    {
+        CarritoService.OnCambio += async () => await ActualizarBadge();
+
+        await CargarDatos();
+        await ActualizarBadge();
+    }
+
+    private async Task CargarDatos()
+    {
+        cargando = true;
+        try
+        {
+            productos = await catalogoService.ObtenerProductosCatalogoAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error cargando productos", Severity.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task ActualizarBadge()
+    {
+        var carrito = await CarritoService.ObtenerCarritoPorClienteIdAsync(clienteId);
+        if (carrito != null)
+        {
+            cantidadItemsCarrito = carrito.Items.Sum(i => i.Cantidad);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task AgregarAlCarrito(Producto prod)
+    {
+        var carrito = await CarritoService.ObtenerCarritoPorClienteIdAsync(clienteId);
+
+        await CarritoService.AgregarItemAlCarrito(carrito.CarritoId, prod.ProductoId, 1);
+
+        Snackbar.Add($"{prod.Nombre} agregado al carrito", Severity.Success, config =>
+        {
+            config.ShowCloseIcon = false;
+            config.Icon = Icons.Material.Filled.CheckCircle;
+        });
+    }
+
+    private void VerDetalle(int id)
+    {
+        NavManager.NavigateTo($"/producto/{id}");
+    }
+
+    private void IrAlCarrito()
+    {
+        NavManager.NavigateTo("/carrito");
+    }
+
+    public void Dispose()
+    {
+        CarritoService.OnCambio -= async () => await ActualizarBadge();
+    }
+}
