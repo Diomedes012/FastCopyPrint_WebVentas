@@ -1,0 +1,202 @@
+﻿@page "/carrito"
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using MudBlazor
+
+@inject CarritoService CarritoService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8 mb-8">
+
+    <MudText Typo="Typo.h4" Class="mb-6" Color="Color.Dark">
+        <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Large" Class="mr-2 mb-n2" Color="Color.Primary" />
+        Tu Carrito de Compras
+    </MudText>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-10" />
+    }
+    else if (miCarrito == null || !miCarrito.Items.Any())
+    {
+        <MudPaper Class="d-flex flex-column align-center justify-center py-16 px-4" Elevation="3">
+            <MudIcon Icon="@Icons.Material.Outlined.ProductionQuantityLimits" Size="Size.Large" Style="font-size: 6rem;" Color="Color.Default" />
+            <MudText Typo="Typo.h5" Class="mt-4 text-muted">Tu carrito está vacío</MudText>
+            <MudText Typo="Typo.body1" Class="mb-6">¡Explora nuestro catálogo y encuentra lo que necesitas!</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="IrAlCatalogo">
+                Ir al Catálogo
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="8">
+                @foreach (var item in miCarrito.Items)
+                {
+                    <MudPaper Elevation="3" Class="d-flex flex-wrap gap-4 pa-4 mb-4 align-center relative">
+
+                        <MudImage Src="@(string.IsNullOrEmpty(item.Producto.ImagenUrl) ? "https://dummyimage.com/150x150/dee2e6/6c757d.jpg" : item.Producto.ImagenUrl)"
+                                  Width="100" Height="100" ObjectFit="ObjectFit.Cover" Class="rounded" />
+
+                        <div class="flex-grow-1" style="min-width: 200px;">
+                            <MudText Typo="Typo.h6">@item.Producto.Nombre</MudText>
+                            <MudText Typo="Typo.body2" Class="text-muted">Precio unitario: $@item.Producto.Precio.ToString("N2")</MudText>
+                        </div>
+
+                        <div class="d-flex align-center border rounded pa-1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small" OnClick="@(() => Disminuir(item))" Disabled="@(item.Cantidad <= 1)" />
+                            <MudText Typo="Typo.body1" Class="mx-4 font-weight-bold">@item.Cantidad</MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Primary" OnClick="@(() => Aumentar(item))" Disabled="@(item.Cantidad >= item.Producto.Stock)" />
+                        </div>
+
+                        <div class="text-right" style="min-width: 100px;">
+                            <MudText Typo="Typo.h6" Color="Color.Primary"><b>$@((item.Producto.Precio * item.Cantidad).ToString("N2"))</b></MudText>
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => Eliminar(item))" Class="mt-1" />
+                        </div>
+                    </MudPaper>
+                }
+            </MudItem>
+
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="4" Class="pa-4 sticky-top" Style="top: 20px;">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h5">Resumen del Pedido</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+
+                    <MudCardContent>
+                        <div class="d-flex justify-space-between mb-2">
+                            <MudText>Subtotal</MudText>
+                            <MudText><b>$@total.ToString("N2")</b></MudText>
+                        </div>
+                        <div class="d-flex justify-space-between mb-2">
+                            <MudText>Impuestos (ITBIS 18%)</MudText>
+                            <MudText>$@((total * 0.18m).ToString("N2"))</MudText>
+                        </div>
+                        <MudDivider Class="my-4" />
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.h5"><b>Total</b></MudText>
+                            <MudText Typo="Typo.h5" Color="Color.Success"><b>$@((total * 1.18m).ToString("N2"))</b></MudText>
+                        </div>
+                    </MudCardContent>
+
+                    <MudCardActions Class="flex-column gap-3">
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" FullWidth="true" StartIcon="@Icons.Material.Filled.Payment" OnClick="IrAlCheckout">
+                            Proceder al Pago
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" OnClick="IrAlCatalogo">
+                            Seguir Comprando
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.DeleteSweep" OnClick="LimpiarCarrito">
+                            Vaciar Carrito
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+
+</MudContainer>
+@code {
+    private Carrito? miCarrito;
+    private bool cargando = true; // Inicia en true para la primera vez
+    private decimal total = 0;
+    private int clienteId = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Suscribirse al evento
+        CarritoService.OnCambio += async () => await RefrescarSilenciosamente();
+
+        // Primera carga (Con Spinner)
+        await CargarDatosIniciales();
+    }
+
+    // Método 1: Carga pesada (Solo al inicio)
+    private async Task CargarDatosIniciales()
+    {
+        cargando = true;
+        try
+        {
+            await ObtenerDatosDeBaseDeDatos();
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    // Método 2: Carga ligera (Cuando tocas botones) -> NO pone cargando = true
+    private async Task RefrescarSilenciosamente()
+    {
+        await ObtenerDatosDeBaseDeDatos();
+        // Forzamos a la UI a actualizarse sin bloquear la pantalla
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // Lógica común de extracción de datos
+    private async Task ObtenerDatosDeBaseDeDatos()
+    {
+        try
+        {
+            miCarrito = await CarritoService.ObtenerCarritoPorClienteIdAsync(clienteId);
+            if (miCarrito != null)
+            {
+                total = miCarrito.Items.Sum(i => i.Producto.Precio * i.Cantidad);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Error sincronizando carrito", Severity.Error);
+        }
+    }
+
+    private async Task Aumentar(CarritoItem item)
+    {
+        // Nota: Al llamar al servicio, este disparará OnCambio -> RefrescarSilenciosamente
+        await CarritoService.AgregarItemAlCarrito(miCarrito!.CarritoId, item.ProductoId, 1);
+    }
+
+    private async Task Disminuir(CarritoItem item)
+    {
+        await CarritoService.DesminuirItemDelCarrito(miCarrito!.CarritoId, item.ProductoId, 1);
+    }
+
+    private async Task Eliminar(CarritoItem item)
+    {
+        await CarritoService.EliminarItemDelCarrito(miCarrito!.CarritoId, item.ProductoId);
+        Snackbar.Add("Producto eliminado", Severity.Info);
+    }
+
+    private async Task LimpiarCarrito()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Vaciar Carrito",
+            "¿Estás seguro de que deseas eliminar todos los productos?",
+            yesText: "Sí, vaciar", cancelText: "Cancelar");
+
+        if (result == true && miCarrito != null)
+        {
+            await CarritoService.LimpiarCarritodeCompras(miCarrito.CarritoId);
+            Snackbar.Add("Carrito vaciado", Severity.Warning);
+        }
+    }
+
+    private void IrAlCatalogo() => NavManager.NavigateTo("/catalogo");
+
+    private void IrAlCheckout() => NavManager.NavigateTo("/checkout");
+
+    public void Dispose()
+    {
+        // Importante: Desuscribirse para evitar errores de memoria
+        CarritoService.OnCambio -= async () => await RefrescarSilenciosamente();
+    }
+
+    [Inject] private IDialogService DialogService { get; set; }
+}
