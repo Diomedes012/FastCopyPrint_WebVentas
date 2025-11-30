@@ -25,6 +25,7 @@ namespace FastCopyPrint_WebVentas
             builder.Services.AddScoped<CategoriasService>();
             builder.Services.AddScoped<ProductosService>();
             builder.Services.AddScoped<VentasService>();
+            builder.Services.AddScoped<DashboardService>();
             builder.Services.AddMudServices();
 
             builder.Services.AddAuthentication(options =>
