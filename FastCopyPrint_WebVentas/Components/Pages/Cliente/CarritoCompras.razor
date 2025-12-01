@@ -1,4 +1,5 @@
 ﻿@page "/carrito"
+@rendermode InteractiveServer
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using MudBlazor
@@ -111,14 +112,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Suscribirse al evento
         CarritoService.OnCambio += async () => await RefrescarSilenciosamente();
-
-        // Primera carga (Con Spinner)
         await CargarDatosIniciales();
     }
 
-    // Método 1: Carga pesada (Solo al inicio)
     private async Task CargarDatosIniciales()
     {
         cargando = true;
@@ -131,16 +128,15 @@
             cargando = false;
         }
     }
-
-    // Método 2: Carga ligera (Cuando tocas botones) -> NO pone cargando = true
+    
     private async Task RefrescarSilenciosamente()
     {
         await ObtenerDatosDeBaseDeDatos();
-        // Forzamos a la UI a actualizarse sin bloquear la pantalla
+        
         await InvokeAsync(StateHasChanged);
     }
 
-    // Lógica común de extracción de datos
+    
     private async Task ObtenerDatosDeBaseDeDatos()
     {
         try
@@ -159,7 +155,6 @@
 
     private async Task Aumentar(CarritoItem item)
     {
-        // Nota: Al llamar al servicio, este disparará OnCambio -> RefrescarSilenciosamente
         await CarritoService.AgregarItemAlCarrito(miCarrito!.CarritoId, item.ProductoId, 1);
     }
 
@@ -194,7 +189,6 @@
 
     public void Dispose()
     {
-        // Importante: Desuscribirse para evitar errores de memoria
         CarritoService.OnCambio -= async () => await RefrescarSilenciosamente();
     }
 
