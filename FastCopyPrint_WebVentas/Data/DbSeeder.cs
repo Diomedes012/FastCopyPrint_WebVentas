@@ -1,100 +1,62 @@
-﻿using FastCopyPrint_Ventas.Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace FastCopyPrint_WebVentas.Data;
 
 public static class DbSeeder
 {
-    public static async Task SeedRolesAndAdminAsync(IServiceProvider service)
+    public static async Task SeedAdminAsync(IServiceProvider service)
     {
         var userManager = service.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = service.GetRequiredService<RoleManager<IdentityRole>>();
-
-        await CheckCreateRole(roleManager, "Admin");
 
         var adminEmail = "admin@fastcopy.com";
-        var defaultPassword = "Admin$1234"; // Guardamos el pass en variable
+        var defaultPassword = "Admin$1234";
 
+        // Buscamos si ya existe
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
         if (adminUser == null)
         {
-            // CASO 1: El usuario NO existe, lo creamos
+            // CREAR USUARIO NUEVO ---
             adminUser = new ApplicationUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
                 EmailConfirmed = true,
-                Nombre = "Administrador Principal",
+                Nombre = "Encargado Principal",
                 Activo = true,
+
                 FechaRegistro = DateTime.UtcNow
             };
 
             var result = await userManager.CreateAsync(adminUser, defaultPassword);
+
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                await userManager.AddToRoleAsync(adminUser, "Encargado");
             }
         }
         else
         {
-            // CASO 2: El usuario SI existe, verificamos si la contraseña es válida
-            // Esto arregla el problema si la contraseña estaba corrupta o era vieja
+            //REPARAR USUARIO EXISTENTE ---
+
             if (!await userManager.CheckPasswordAsync(adminUser, defaultPassword))
             {
-                // Generamos un token para resetear la contraseña
                 var token = await userManager.GeneratePasswordResetTokenAsync(adminUser);
-                // Reseteamos la contraseña a la correcta
                 await userManager.ResetPasswordAsync(adminUser, token, defaultPassword);
             }
 
-            // Aseguramos que tenga el rol
-            if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
+            //Asegurar que tenga el rol de Encargado
+            if (!await userManager.IsInRoleAsync(adminUser, "Encargado"))
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                await userManager.AddToRoleAsync(adminUser, "Encargado");
             }
 
-            // OPCIONAL: Asegurar que Activo = true si ya existía pero estaba desactivado
+            // Asegurar que esté Activo
             if (!adminUser.Activo)
             {
                 adminUser.Activo = true;
                 await userManager.UpdateAsync(adminUser);
             }
-        }
-
-        await SeedMetodosPagoAsync(service);
-    }
-
-    public static async Task SeedMetodosPagoAsync(IServiceProvider service)
-    {
-       
-        var context = service.GetRequiredService<ApplicationDbContext>();
-
-        if (!await context.MetodosPago.AnyAsync())
-        {
-            context.MetodosPago.AddRange(
-                new MetodoPago
-                {
-                    Nombre = "Tarjeta",
-                    Descripcion = "Pago procesado vía tarjeta de Crédito/Débito"
-                },
-                new MetodoPago
-                {
-                    Nombre = "Efectivo",
-                    Descripcion = "Pago contra entrega en el local o domicilio"
-                }
-            );
-
-            await context.SaveChangesAsync();
-        }
-    }
-
-    private static async Task CheckCreateRole(RoleManager<IdentityRole> roleManager, string roleName)
-    {
-        if (!await roleManager.RoleExistsAsync(roleName))
-        {
-            await roleManager.CreateAsync(new IdentityRole(roleName));
         }
     }
 }
