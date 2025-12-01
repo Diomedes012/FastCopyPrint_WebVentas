@@ -1,0 +1,31 @@
+﻿@inherits LayoutComponentBase
+
+@* PROVEEDORES ESTÁTICOS *@
+<MudThemeProvider Theme="_miTema" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Color="Color.Primary" Style="height: 64px;">
+        <a href="/" target="_top" style="text-decoration: none; display: flex; align-items: center;">
+            <MudImage Src="images/logo.png" Height="40" Width="40" Class="rounded-circle mr-3" Elevation="2" />
+            <MudText Typo="Typo.h6" Color="Color.Inherit"><b>FastCopy Print</b></MudText>
+        </a>
+        <MudSpacer />
+        <MudText Typo="Typo.caption">Zona Segura</MudText>
+    </MudAppBar>
+
+    <MudMainContent Class="d-flex justify-center align-center"
+                    Style="min-height: 100vh; background-color: var(--mud-palette-background); padding-top: 64px;">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme _miTema = new MudTheme()
+    {
+        PaletteLight = new PaletteLight() { Primary = "#0056D2", Secondary = "#FF9800", AppbarBackground = "#0056D2" },
+        PaletteDark = new PaletteDark() { Primary = "#64B5F6", Secondary = "#FFB74D", AppbarBackground = "#1a1a27", Background = "#1a1a27", Surface = "#212130" }
+    };
+}

@@ -123,6 +123,13 @@ public class CarritoService(IDbContextFactory<ApplicationDbContext> dbFactory)
 
         if (carrito == null)
         {
+            bool existeCliente = await Context.Clientes.AnyAsync(c => c.ClienteId == clienteId);
+
+            if (!existeCliente)
+            {
+                return null;
+            }
+
             carrito = new Carrito
             {
                 ClienteId = clienteId,
@@ -131,6 +138,7 @@ public class CarritoService(IDbContextFactory<ApplicationDbContext> dbFactory)
             Context.Carritos.Add(carrito);
             await Context.SaveChangesAsync();
         }
+
         return carrito;
     }
 

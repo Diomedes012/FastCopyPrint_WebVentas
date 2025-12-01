@@ -1,73 +1,75 @@
-﻿@implements IDisposable
-
+﻿@using MudBlazor
+@using Microsoft.AspNetCore.Components.Authorization
+@implements IDisposable
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">FastCopyPrint_WebVentas</a>
-    </div>
-</div>
+<MudNavMenu Class="mud-width-full py-2">
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <MudText Typo="Typo.subtitle2" Color="Color.Inherit" Class="ml-4 my-2"><b>General</b></MudText>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Storefront">Catálogo</MudNavLink>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+    <AuthorizeView Roles="Cliente">
+        <Authorized>
+            <MudNavLink Href="/carrito" Icon="@Icons.Material.Filled.ShoppingCart">Mi Carrito</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+    <AuthorizeView Roles="Encargado">
+        <Authorized>
+            <MudDivider Class="my-2" />
+            <MudText Typo="Typo.subtitle2" Color="Color.Inherit" Class="ml-4 mt-2 my-2"><b>Administración</b></MudText>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
+            <MudNavLink Href="/admin/dashboard" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
 
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
-                    </NavLink>
+            <MudNavGroup Title="Inventario" Icon="@Icons.Material.Filled.Inventory" Expanded="true">
+                <MudNavLink Href="/admin/productos" Icon="@Icons.Material.Filled.Inventory2" Class="ml-2">Productos</MudNavLink>
+                <MudNavLink Href="/admin/categorias" Icon="@Icons.Material.Filled.Category" Class="ml-2">Categorías</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavLink Href="/admin/ventas" Icon="@Icons.Material.Filled.History">Historial Ventas</MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+
+    <MudDivider Class="my-2" />
+    <MudText Typo="Typo.subtitle2" Color="Color.Inherit" Class="ml-4 my-2"><b>Cuenta</b></MudText>
+
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.Person">
+                @(context.User.Identity?.Name ?? "Mi Perfil")
+            </MudNavLink>
+
+            <form action="Account/Logout" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+
+                <div class="mud-nav-item">
+                    <button type="submit" class="mud-nav-link mud-ripple">
+                        <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mud-nav-link-icon" />
+                        <span class="mud-nav-link-text">Cerrar Sesión</span>
+                    </button>
                 </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-    </nav>
-</div>
+            </form>
+        </Authorized>
+        <NotAuthorized>
+            <div class="mud-nav-item">
+                <a href="/Account/Login" class="mud-nav-link">
+                    <MudIcon Icon="@Icons.Material.Filled.Login" Class="mud-nav-link-icon" />
+                    <span class="mud-nav-link-text">Iniciar Sesión</span>
+                </a>
+            </div>
+
+            <div class="mud-nav-item">
+                <a href="/Account/Register" class="mud-nav-link">
+                    <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mud-nav-link-icon" />
+                    <span class="mud-nav-link-text">Registrarse</span>
+                </a>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+
+</MudNavMenu>
 
 @code {
     private string? currentUrl;
@@ -89,4 +91,3 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-

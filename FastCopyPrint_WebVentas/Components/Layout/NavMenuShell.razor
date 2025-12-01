@@ -1,0 +1,73 @@
+﻿@using MudBlazor
+@inherits LayoutComponentBase
+@rendermode InteractiveServer
+
+<MudThemeProvider Theme="_miTema" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudAppBar Elevation="1" Color="Color.Primary" Style="height: 85px;" Class="px-4">
+
+    <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                   Color="Color.Inherit"
+                   Edge="Edge.Start"
+                   OnClick="@DrawerToggle"
+                   Size="Size.Large"
+                   Class="mr-2" />
+
+    <MudImage Src="images/logo.png"
+              Height="60"
+              Width="60"
+              ObjectFit="ObjectFit.Cover"
+              Class="rounded-circle"
+              Style="border: 2px solid white; display: block;"
+              Elevation="2" />
+
+    <MudText Typo="Typo.h5" Class="ml-4" Style="font-weight: 700; letter-spacing: 0.5px;">
+        FastCopy Print
+    </MudText>
+
+    <MudSpacer />
+
+    <MudIconButton Icon="@Icons.Material.Filled.AccountCircle"
+                   Color="Color.Inherit"
+                   Href="Account/Manage"
+                   Class="ml-2"
+                   Size="Size.Large" />
+</MudAppBar>
+
+<MudDrawer @bind-Open="_drawerOpen"
+           ClipMode="DrawerClipMode.Always"
+           Elevation="2"
+           Style="top: 85px; height: calc(100vh - 85px);">
+    <NavMenu />
+</MudDrawer>
+
+@code {
+    bool _drawerOpen = true;
+
+    private MudTheme _miTema = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#0056D2",
+            Secondary = "#FF9800",
+            AppbarBackground = "#0056D2",
+            Background = "#F5F5F5",
+            Surface = "#FFFFFF"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#64B5F6",
+            Secondary = "#FFB74D",
+            AppbarBackground = "#1a1a27",
+            Background = "#1a1a27",
+            Surface = "#212130"
+        }
+    };
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

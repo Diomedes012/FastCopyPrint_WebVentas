@@ -10,7 +10,9 @@ public class CatalogoService(IDbContextFactory<ApplicationDbContext> dbFactory)
     {
         await using var Context = await dbFactory.CreateDbContextAsync();
         return await Context.Productos
+            .Include(p => p.Categoria)
             .Where(p => p.EstaActivo && p.Stock > 0)
+            .AsNoTracking()
             .ToListAsync();
     }
 
