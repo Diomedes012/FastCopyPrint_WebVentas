@@ -31,8 +31,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         }
 
         builder.Entity<IdentityRole>().HasData(
-            new IdentityRole { Id = "1", Name = "Encargado", NormalizedName = "ENCARGADO" },
-            new IdentityRole { Id = "2", Name = "Cliente", NormalizedName = "CLIENTE" }
+            new IdentityRole { Id = "1", Name = "Encargado", NormalizedName = "ENCARGADO", ConcurrencyStamp = "1_stamp_estatico" },
+            new IdentityRole { Id = "2", Name = "Cliente", NormalizedName = "CLIENTE", ConcurrencyStamp = "2_stamp_estatico" }
         );
 
         builder.Entity<MetodoPago>().HasData(

@@ -4,6 +4,7 @@ using FastCopyPrint_WebVentas.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FastCopyPrint_WebVentas.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251201210424_TablasFast1")]
+    partial class TablasFast1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -405,14 +408,14 @@ namespace FastCopyPrint_WebVentas.Migrations
                         new
                         {
                             Id = "1",
-                            ConcurrencyStamp = "1_stamp_estatico",
+                            ConcurrencyStamp = "7bceef36-8c10-4d0e-9f2f-4ca9b52dd83c",
                             Name = "Encargado",
                             NormalizedName = "ENCARGADO"
                         },
                         new
                         {
                             Id = "2",
-                            ConcurrencyStamp = "2_stamp_estatico",
+                            ConcurrencyStamp = "20ef5edc-ce51-4d34-9b09-5b1bbd2a2b75",
                             Name = "Cliente",
                             NormalizedName = "CLIENTE"
                         });
