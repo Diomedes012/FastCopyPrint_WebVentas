@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using FastCopyPrint_WebVentas.Data
+@using MudBlazor
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -15,61 +16,145 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Registrarse</PageTitle>
 
-<h1>Register</h1>
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center mt-8">
+    <MudCard Elevation="4" Class="pa-4" Style="width: 100%;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h4" Align="Align.Center" Color="Color.Primary" GutterBottom="true">
+                    Crear Cuenta
+                </MudText>
+                <MudText Typo="Typo.body1" Align="Align.Center">
+                    Regístrate para comenzar a comprar
+                </MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
 
-<div class="row">
-    <div class="col-lg-6">
-        <StatusMessage Message="@Message" />
-        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
-            <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
-    </div>
-</div>
+            <StatusMessage Message="@Message" />
+
+            <form method="post" @formname="register">
+                <AntiforgeryToken />
+
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+
+                <div class="mud-input-control mud-input-input-control mud-input-margin-dense mb-4">
+                    <div class="mud-input-control-input-container">
+                        <div class="mud-input mud-input-outlined mud-input-adorned-end mud-shrink">
+                            <input class="mud-input-slot mud-input-root mud-input-root-outlined"
+                                   type="text"
+                                   name="Input.Nombre"
+                                   value="@Input.Nombre"
+                                   required placeholder="Nombre Completo" />
+                            <div class="mud-input-adornment mud-input-adornment-end">
+                                <MudIcon Icon="@Icons.Material.Filled.Person" Color="Color.Default" />
+                            </div>
+                            <fieldset class="mud-input-outlined-border">
+                                <legend class="mud-input-outlined-legend" style="width: 0px;"><span></span></legend>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mud-input-control mud-input-input-control mud-input-margin-dense mb-4">
+                    <div class="mud-input-control-input-container">
+                        <div class="mud-input mud-input-outlined mud-input-adorned-end mud-shrink">
+                            <input class="mud-input-slot mud-input-root mud-input-root-outlined"
+                                   type="email"
+                                   name="Input.Email"
+                                   value="@Input.Email"
+                                   required placeholder="nombre@ejemplo.com" />
+                            <div class="mud-input-adornment mud-input-adornment-end">
+                                <MudIcon Icon="@Icons.Material.Filled.Email" Color="Color.Default" />
+                            </div>
+                            <fieldset class="mud-input-outlined-border">
+                                <legend class="mud-input-outlined-legend" style="width: 0px;"><span></span></legend>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mud-input-control mud-input-input-control mud-input-margin-dense mb-4">
+                    <div class="mud-input-control-input-container">
+                        <div class="mud-input mud-input-outlined mud-input-adorned-end mud-shrink">
+                            <input class="mud-input-slot mud-input-root mud-input-root-outlined"
+                                   type="password"
+                                   name="Input.Password"
+                                   required placeholder="Contraseña" />
+                            <div class="mud-input-adornment mud-input-adornment-end">
+                                <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Default" />
+                            </div>
+                            <fieldset class="mud-input-outlined-border">
+                                <legend class="mud-input-outlined-legend" style="width: 0px;"><span></span></legend>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mud-input-control mud-input-input-control mud-input-margin-dense mb-4">
+                    <div class="mud-input-control-input-container">
+                        <div class="mud-input mud-input-outlined mud-input-adorned-end mud-shrink">
+                            <input class="mud-input-slot mud-input-root mud-input-root-outlined"
+                                   type="password"
+                                   name="Input.ConfirmPassword"
+                                   required placeholder="Confirmar Contraseña" />
+                            <div class="mud-input-adornment mud-input-adornment-end">
+                                <MudIcon Icon="@Icons.Material.Filled.LockReset" Color="Color.Default" />
+                            </div>
+                            <fieldset class="mud-input-outlined-border">
+                                <legend class="mud-input-outlined-legend" style="width: 0px;"><span></span></legend>
+                            </fieldset>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="mud-button-root mud-button mud-button-filled mud-button-filled-primary mud-button-filled-size-large mud-width-full mb-4">
+                    <span class="mud-button-label">Registrarse</span>
+                </button>
+
+            </form>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
 
-    [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = default!;
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "register")]
+    private InputModel Input { get; set; } = new();
 
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
     private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        Input ??= new();
+        if (HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            await RegisterUser();
+        }
     }
 
-    public async Task RegisterUser(EditContext editContext)
+    public async Task RegisterUser()
     {
         var user = CreateUser();
+
+        // 1. Asignamos el Nombre que viene del formulario
+        user.Nombre = Input.Nombre;
+
+        // 2. Asignamos fecha de registro y estado activo por defecto
+        user.FechaRegistro = DateTime.UtcNow;
+        user.Activo = true;
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
         var result = await UserManager.CreateAsync(user, Input.Password);
 
         if (!result.Succeeded)
@@ -83,6 +168,7 @@
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
         var callbackUrl = NavigationManager.GetUriWithQueryParameters(
             NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
             new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
@@ -126,20 +212,25 @@
 
     private sealed class InputModel
     {
+        // PROPIEDAD NOMBRE AGREGADA
+        [Required]
+        [Display(Name = "Nombre Completo")]
+        public string Nombre { get; set; } = "";
+
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
         [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [StringLength(100, ErrorMessage = "La {0} debe tener al menos {2} y máximo {1} caracteres.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Compare("Password", ErrorMessage = "La contraseña y la confirmación no coinciden.")]
         public string ConfirmPassword { get; set; } = "";
     }
 }
