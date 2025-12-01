@@ -1,0 +1,236 @@
+﻿@page "/checkout"
+@rendermode InteractiveServer
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using FastCopyPrint_WebVentas.Data
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+
+@inject CarritoService CarritoService
+@inject VentaService VentaService
+@inject NavigationManager NavManager
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8 mb-8">
+    <MudText Typo="Typo.h4" Class="mb-6" Color="Color.Dark">
+        <MudIcon Icon="@Icons.Material.Filled.Payment" Size="Size.Large" Class="mr-2 mb-n2" Color="Color.Primary" />
+        Finalizar Compra
+    </MudText>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-10" />
+        <MudText Align="Align.Center">Cargando tu pedido...</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="7">
+                <MudCard Elevation="3" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Class="mr-2" />
+                        Dirección de Envío
+                    </MudText>
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <MudTextField @bind-Value="direccion"
+                                          Label="Dirección Completa"
+                                          Variant="Variant.Outlined"
+                                          Lines="2"
+                                          HelperText="Calle, Número, Sector" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField @bind-Value="telefono" Label="Teléfono de Contacto" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudTextField Value="@emailUsuario" Label="Email" Variant="Variant.Outlined" ReadOnly="true" Disabled="true" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCard>
+
+                <MudCard Elevation="3" Class="pa-4">
+                    <MudText Typo="Typo.h6" Class="mb-4">
+                        <MudIcon Icon="@Icons.Material.Filled.CreditCard" Class="mr-2" />
+                        Método de Pago
+                    </MudText>
+
+                    <MudRadioGroup @bind-Value="metodoPago">
+                        <MudRadio Value="@("Tarjeta")" Color="Color.Primary">Tarjeta de Crédito / Débito</MudRadio>
+                        <MudRadio Value="@("Efectivo")" Color="Color.Secondary">Efectivo contra entrega</MudRadio>
+                    </MudRadioGroup>
+
+                    @if (metodoPago == "Tarjeta")
+                    {
+                        <div class="mt-4 p-4 border rounded" style="background-color: #f8f9fa;">
+                            <MudGrid>
+                                <MudItem xs="12">
+                                    <MudTextField T="string" Label="Número de Tarjeta" Placeholder="0000 0000 0000 0000" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CreditCard" />
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField T="string" Label="Fecha Exp (MM/YY)" Placeholder="12/26" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField T="string" Label="CVV" Placeholder="123" Variant="Variant.Outlined" InputType="InputType.Password" />
+                                </MudItem>
+                            </MudGrid>
+                        </div>
+                    }
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="5">
+                <MudCard Elevation="4" Class="pa-4 sticky-top" Style="top: 20px;">
+                    <MudText Typo="Typo.h5" Class="mb-4">Resumen del Pedido</MudText>
+
+                    @if (itemsCarrito != null)
+                    {
+                        <div style="max-height: 300px; overflow-y: auto;" class="mb-4 pr-2">
+                            @foreach (var item in itemsCarrito)
+                            {
+                                <div class="d-flex justify-space-between mb-2">
+                                    <MudText Typo="Typo.body2"><b>@item.Cantidad x</b> @item.Producto.Nombre</MudText>
+                                    <MudText Typo="Typo.body2">$@((item.Cantidad * item.Producto.Precio).ToString("N2"))</MudText>
+                                </div>
+                                <MudDivider Class="my-1" />
+                            }
+                        </div>
+                    }
+
+                    <div class="d-flex justify-space-between mt-4">
+                        <MudText Typo="Typo.h6">Total a Pagar:</MudText>
+                        <MudText Typo="Typo.h5" Color="Color.Success"><b>$@total.ToString("N2")</b></MudText>
+                    </div>
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               Size="Size.Large"
+                               FullWidth="true"
+                               Class="mt-6 py-3"
+                               StartIcon="@Icons.Material.Filled.CheckCircle"
+                               OnClick="ProcesarPago"
+                               Disabled="@procesandoPago">
+                        @if (procesandoPago)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <span class="ms-2">Procesando...</span>
+                        }
+                        else
+                        {
+                            <span>Confirmar Compra</span>
+                        }
+                    </MudButton>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+</MudContainer>
+
+@code {
+    private List<CarritoItem> itemsCarrito = new();
+    private decimal total = 0;
+    private bool cargando = true;
+    private bool procesandoPago = false;
+
+    private int clienteIdReal;
+    private string emailUsuario = "";
+
+    private string direccion = "";
+    private string telefono = "";
+    private string metodoPago = "Tarjeta";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatosUsuarioYCarrito();
+    }
+
+    private async Task CargarDatosUsuarioYCarrito()
+    {
+        cargando = true;
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity == null || !user.Identity.IsAuthenticated)
+            {
+                NavManager.NavigateTo("Account/Login");
+                return;
+            }
+
+            var appUser = await UserManager.GetUserAsync(user);
+            if (appUser == null) return;
+            emailUsuario = appUser.Email ?? "";
+
+            using var context = await DbFactory.CreateDbContextAsync();
+            var cliente = await context.Clientes.FirstOrDefaultAsync(c => c.UsuarioId == appUser.Id);
+
+            if (cliente == null)
+            {
+                cliente = new Cliente { UsuarioId = appUser.Id, DireccionEnvio = "" };
+                context.Clientes.Add(cliente);
+                await context.SaveChangesAsync();
+            }
+
+            clienteIdReal = cliente.ClienteId;
+            direccion = cliente.DireccionEnvio;
+
+            telefono = appUser.PhoneNumber ?? "";
+
+            var carrito = await CarritoService.ObtenerCarritoPorClienteIdAsync(clienteIdReal);
+
+            if (carrito == null || !carrito.Items.Any())
+            {
+                Snackbar.Add("Tu carrito está vacío.", Severity.Warning);
+                NavManager.NavigateTo("/");
+                return;
+            }
+
+            itemsCarrito = carrito.Items.ToList();
+            total = itemsCarrito.Sum(i => i.Producto.Precio * i.Cantidad);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error cargando datos: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task ProcesarPago()
+    {
+        if (string.IsNullOrWhiteSpace(direccion))
+        {
+            Snackbar.Add("La dirección de envío es obligatoria.", Severity.Warning);
+            return;
+        }
+
+        procesandoPago = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(1500);
+
+            var ventaId = await VentaService.ProcesarVentaAsync(clienteIdReal, direccion, metodoPago);
+
+            Snackbar.Add($"¡Compra realizada con éxito! Factura #{ventaId}", Severity.Success);
+
+            NavManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al procesar la venta: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            procesandoPago = false;
+        }
+    }
+}

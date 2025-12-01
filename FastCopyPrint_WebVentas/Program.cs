@@ -11,7 +11,8 @@ namespace FastCopyPrint_WebVentas
 {
     public class Program
     {
-        public static void Main(string[] args)
+        // CAMBIO 1: Cambiar 'void' a 'async Task' para permitir el await del seeder
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -26,16 +27,20 @@ namespace FastCopyPrint_WebVentas
             builder.Services.AddScoped<ProductosService>();
             builder.Services.AddScoped<VentasService>();
             builder.Services.AddScoped<DashboardService>();
+            builder.Services.AddScoped<CatalogoService>();
+            builder.Services.AddScoped<CarritoService>();
+            builder.Services.AddScoped<VentaService>();
             builder.Services.AddMudServices();
 
             builder.Services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = IdentityConstants.ApplicationScheme;
-                    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-                })
+            {
+                options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
                 .AddIdentityCookies();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString),
                 contextLifetime: ServiceLifetime.Scoped,
@@ -47,10 +52,12 @@ namespace FastCopyPrint_WebVentas
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddIdentityCore<ApplicationUser>(options =>
-                {
-                    options.SignIn.RequireConfirmedAccount = true;
-                    options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-                })
+            {
+                options.SignIn.RequireConfirmedAccount = true;
+                options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
+            })
+                // CAMBIO 2: ¡Importante! Agregar Roles para que funcione RoleManager en el Seeder
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddSignInManager()
                 .AddDefaultTokenProviders();
@@ -67,7 +74,6 @@ namespace FastCopyPrint_WebVentas
             else
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
@@ -80,10 +86,27 @@ namespace FastCopyPrint_WebVentas
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
 
-            // Add additional endpoints required by the Identity /Account Razor components.
             app.MapAdditionalIdentityEndpoints();
 
-            app.Run();
+            // CAMBIO 3: Ejecutar el Seeder
+            // Creamos un scope temporal para obtener los servicios necesarios
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    // Llamamos a tu método estático
+                    await DbSeeder.SeedRolesAndAdminAsync(services);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "Ocurrió un error al ejecutar el Seeding de datos.");
+                }
+            }
+
+            // Ejecutar la aplicación
+            await app.RunAsync();
         }
     }
 }
