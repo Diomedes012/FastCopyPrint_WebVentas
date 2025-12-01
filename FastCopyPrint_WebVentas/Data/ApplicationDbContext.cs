@@ -1,4 +1,5 @@
 using FastCopyPrint_Ventas.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,16 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             propiedad.SetColumnType("decimal(18, 2)");
         }
+
+        builder.Entity<IdentityRole>().HasData(
+            new IdentityRole { Id = "1", Name = "Encargado", NormalizedName = "ENCARGADO" },
+            new IdentityRole { Id = "2", Name = "Cliente", NormalizedName = "CLIENTE" }
+        );
+
+        builder.Entity<MetodoPago>().HasData(
+            new MetodoPago { MetodoPagoId = 1, Nombre = "Efectivo", Descripcion = "Pago contra entrega" },
+            new MetodoPago { MetodoPagoId = 2, Nombre = "Tarjeta", Descripcion = "Crédito o Débito" }
+        );
     }
 
 }
