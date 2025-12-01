@@ -96,7 +96,7 @@ namespace FastCopyPrint_WebVentas
                 try
                 {
                     // Llamamos a tu método estático
-                    await DbSeeder.SeedRolesAndAdminAsync(services);
+                    await DbSeeder.SeedAdminAsync(services);
                 }
                 catch (Exception ex)
                 {
