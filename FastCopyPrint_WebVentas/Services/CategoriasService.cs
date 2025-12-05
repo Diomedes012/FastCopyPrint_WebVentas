@@ -8,6 +8,10 @@ public class CategoriasService(IDbContextFactory<ApplicationDbContext> factory)
 {
     public async Task<bool> Guardar(Categoria categoria)
     {
+        if(!string.IsNullOrEmpty(categoria.Descripcion) && categoria.Descripcion.Length > 300) 
+        {
+            throw new Exception($"La descripción tiene {categoria.Descripcion.Length} caracteres. El límite es 300.");
+        }
         await using var contexto = await factory.CreateDbContextAsync();
 
         if (!await Existe(categoria.CategoriaId))
