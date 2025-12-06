@@ -9,6 +9,23 @@ public class ProductosService(IDbContextFactory<ApplicationDbContext> factory)
 {
     public async Task<bool> Guardar(Producto producto)
     {
+        if(!string.IsNullOrEmpty(producto.Nombre) && producto.Nombre.Length > 200) 
+        {
+            throw new Exception($"El nombre es muy largo ({producto.Nombre.Length} caracteres). El limite es 200.");
+        }
+        if (!string.IsNullOrEmpty(producto.Descripcion) && producto.Descripcion.Length > 1000)
+        {
+            throw new Exception($"La descripción es muy larga ({producto.Descripcion.Length} caracteres). El límite es 1000.");
+        }
+        if (producto.Precio < 0)
+        {
+            throw new Exception("El precio no puede ser negativo.");
+        }
+        if (producto.Stock < 0)
+        {
+            throw new Exception("El stock no puede ser negativo.");
+        }
+
         await using var contexto = await factory.CreateDbContextAsync();
 
         if (!await Existe(producto.ProductoId))

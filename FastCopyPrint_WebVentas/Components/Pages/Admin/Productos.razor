@@ -156,15 +156,22 @@
             var data = result.Data as Producto;
             if (data != null)
             {
-                var exito = await productosService.Guardar(data);
-                if (exito)
+                try
                 {
-                    Snackbar.Add("Producto guardado", Severity.Success);
-                    await CargarDatos();
+                    var exito = await productosService.Guardar(data);
+                    if (exito)
+                    {
+                        Snackbar.Add("Producto guardado", Severity.Success);
+                        await CargarDatos();
+                    }
+                    else
+                    {
+                        Snackbar.Add("Error al guardar", Severity.Error);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Snackbar.Add("Error al guardar", Severity.Error);
+                    Snackbar.Add(ex.Message, Severity.Warning);
                 }
             }
         }
