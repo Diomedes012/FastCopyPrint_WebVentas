@@ -79,7 +79,7 @@
     }
 </MudContainer>
 
-@code {
+    @code {
     private List<Categoria> listaCategorias = new();
     private bool cargando = true;
     private string textoBusqueda = "";
@@ -133,15 +133,22 @@
             var data = result.Data as Categoria;
             if (data != null)
             {
-                var exito = await categoriasService.Guardar(data);
-                if (exito)
+                try
                 {
-                    Snackbar.Add("Guardado correctamente", Severity.Success);
-                    await CargarDatos();
+                    var exito = await categoriasService.Guardar(data);
+                    if (exito)
+                    {
+                        Snackbar.Add("Guardado correctamente", Severity.Success);
+                        await CargarDatos();
+                    }
+                    else
+                    {
+                        Snackbar.Add("Error al guardar", Severity.Error);
+                    }
                 }
-                else
+                catch(Exception ex)
                 {
-                    Snackbar.Add("Error al guardar", Severity.Error);
+                    Snackbar.Add(ex.Message, Severity.Warning);
                 }
             }
         }

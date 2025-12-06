@@ -10,7 +10,7 @@ public class Categoria
     [Required, MaxLength(100)]
     public string Nombre { get; set; }
 
-    [Required, MaxLength(300)]
+    [Required, MaxLength(300, ErrorMessage = "La descripcion no puede exceder los 300 caracteres!")]
     public string Descripcion { get; set; }
 
 }
