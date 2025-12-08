@@ -14,6 +14,37 @@
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
 
     <MudText Typo="Typo.h4" Class="mb-4">Historial de Ventas</MudText>
+    <MudPaper Elevation="3" Class="pa-4 mb-4">
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="4">
+                <MudDateRangePicker Label="Filtrar por Fecha"
+                                    @bind-DateRange="_rangoFecha"
+                                    PlaceholderStart="Desde"
+                                    PlaceholderEnd="Hasta"
+                                    Clearable="true"
+                                    AdornmentColor="Color.Primary" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="4">
+                <MudSelect T="string" Label="Estado de Venta"
+                           @bind-Value="_estadoFiltro"
+                           Clearable="true"
+                           AdornmentColor="Color.Primary">
+                    <MudSelectItem Value="@("Completada")">Completada</MudSelectItem>
+                    <MudSelectItem Value="@("Pendiente")">Pendiente</MudSelectItem>
+                    <MudSelectItem Value="@("Anulada")">Anulada</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="12" md="4">
+                <MudTextField @bind-Value="textoBusqueda"
+                              Placeholder="Buscar por Cliente, ID o Vendedor..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Clearable="true" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
     @if (cargando)
     {
@@ -28,10 +59,6 @@
                 <MudText Typo="Typo.h6" Color="Color.Primary">
                     <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2 mb-n1" /> Transacciones
                 </MudText>
-                <MudSpacer />
-                <MudTextField @bind-Value="textoBusqueda" Placeholder="Buscar por cliente o factura..."
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                              IconSize="Size.Medium" Class="mt-0" />
             </ToolBarContent>
 
             <HeaderContent>
@@ -91,10 +118,12 @@
     }
 </MudContainer>
 
-@code {
+    @code {
     private List<Venta> listaVentas = new();
     private bool cargando = true;
     private string textoBusqueda = "";
+    private DateRange _rangoFecha = null;
+    private string _estadoFiltro = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -119,12 +148,34 @@
     }
     private bool Filtrar(Venta venta)
     {
-        if (string.IsNullOrWhiteSpace(textoBusqueda)) return true;
+        // 1. Filtro por Estado (Si hay uno seleccionado)
+        if (!string.IsNullOrEmpty(_estadoFiltro))
+        {
+            if (venta.EstadoVenta != _estadoFiltro)
+                return false; // Si no coincide el estado, descarta la fila
+        }
 
-        // Buscamos por ID, Nombre de Cliente o Nombre de Vendedor
+        // 2. Filtro por Fechas (Si se seleccionó un rango)
+        if (_rangoFecha != null && _rangoFecha.Start.HasValue && _rangoFecha.End.HasValue)
+        {
+            //Usamos .Date para ignorar las horas y comparar solo días
+            if (venta.FechaVenta.Date < _rangoFecha.Start.Value.Date ||
+                venta.FechaVenta.Date > _rangoFecha.End.Value.Date)
+            {
+                return false; // Fuera de fecha
+            }
+        }
+
+        // 3. Filtro de Texto 
+        if (string.IsNullOrWhiteSpace(textoBusqueda))
+            return true; // Si pasó los filtros anteriores y no hay texto, es válido
+
+        // Búsqueda insensible a mayúsculas/minúsculas
         if (venta.VentaId.ToString().Contains(textoBusqueda)) return true;
-        if (venta.Cliente?.Usuario?.Nombre != null && venta.Cliente.Usuario.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
-        if (venta.Vendedor?.Nombre != null && venta.Vendedor.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+        if (venta.Cliente?.Usuario?.Nombre != null &&
+            venta.Cliente.Usuario.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
+        if (venta.Vendedor?.Nombre != null &&
+            venta.Vendedor.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)) return true;
 
         return false;
     }
