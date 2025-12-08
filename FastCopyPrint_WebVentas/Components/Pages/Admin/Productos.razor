@@ -88,7 +88,11 @@
                 </MudTd>
 
                 <MudTd DataLabel="Estado">
-                    <MudSwitch T="bool" Value="@context.EstaActivo" Color="Color.Primary" ReadOnly="true" Size="Size.Small" />
+                    <MudSwitch T="bool"
+                               Value="@context.EstaActivo"
+                               ValueChanged="@((bool nuevoEstado) => CambiarEstado(context, nuevoEstado))"
+                               Color="Color.Primary"
+                               Size="Size.Small" />
                 </MudTd>
 
                 <MudTd DataLabel="Acciones" Style="text-align:center">
@@ -216,6 +220,32 @@
             {
                 Snackbar.Add("No se puede eliminar (probablemente tiene ventas)", Severity.Error);
             }
+        }
+    }
+
+    private async Task CambiarEstado(Producto prod, bool nuevoEstado)
+    {
+        try
+        {
+            prod.EstaActivo = nuevoEstado;
+
+            var exito = await productosService.Guardar(prod);
+
+            if (exito)
+            {
+                var mensaje = nuevoEstado ? "Producto activado" : "Producto desactivado";
+                Snackbar.Add(mensaje, Severity.Success);
+            }
+            else
+            {
+                prod.EstaActivo = !nuevoEstado;
+                Snackbar.Add("Error al actualizar estado", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            prod.EstaActivo = !nuevoEstado;
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 }

@@ -93,16 +93,7 @@ namespace FastCopyPrint_WebVentas
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                try
-                {
-                    // Llamamos a tu método estático
-                    await DbSeeder.SeedAdminAsync(services);
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "Ocurrió un error al ejecutar el Seeding de datos.");
-                }
+                await FastCopyPrint_WebVentas.Data.DbSeeder.SeedAsync(services);
             }
 
             // Ejecutar la aplicación

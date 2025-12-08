@@ -39,6 +39,73 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             new MetodoPago { MetodoPagoId = 1, Nombre = "Efectivo", Descripcion = "Pago contra entrega" },
             new MetodoPago { MetodoPagoId = 2, Nombre = "Tarjeta", Descripcion = "Crédito o Débito" }
         );
+
+        builder.Entity<Categoria>().HasData(
+        new Categoria { CategoriaId = 1, Nombre = "Papelería", Descripcion = "Papel, cuadernos y sobres" },
+        new Categoria { CategoriaId = 2, Nombre = "Escritura", Descripcion = "Bolígrafos, lápices y marcadores" },
+        new Categoria { CategoriaId = 3, Nombre = "Oficina", Descripcion = "Archivadores, grapadoras y clips" },
+        new Categoria { CategoriaId = 4, Nombre = "Tecnología", Descripcion = "Memorias USB, cables y accesorios" }
+        );
+
+        builder.Entity<Producto>().HasData(
+            new Producto
+            {
+                ProductoId = 1,
+                Nombre = "Resma Papel Bond 8.5x11",
+                Descripcion = "Papel ultra blanco 75g, 500 hojas.",
+                Precio = 450.00m,
+                Stock = 100,
+                CategoriaId = 1,
+                EstaActivo = true,
+                ImagenUrl = "images/ResmaPapel.jpg"
+            },
+            new Producto
+            {
+                ProductoId = 2,
+                Nombre = "Caja Bolígrafos Azul",
+                Descripcion = "Caja de 12 unidades, punta media.",
+                Precio = 350.00m,
+                Stock = 50,
+                CategoriaId = 2,
+                EstaActivo = true,
+                ImagenUrl = "images/CajaLapiceros.jpg"
+            },
+            new Producto
+            {
+                ProductoId = 3,
+                Nombre = "Folder Manila 8.5x11",
+                Descripcion = "Paquete de 10 folders color crema.",
+                Precio = 80.00m,
+                Stock = 200,
+                CategoriaId = 3,
+                EstaActivo = true,
+                ImagenUrl = "images/Folders.jfif"
+
+            },
+            new Producto
+            {
+                ProductoId = 4,
+                Nombre = "Memoria USB 32GB",
+                Descripcion = "USB 3.0 Kingston DataTraveler.",
+                Precio = 450.00m,
+                Stock = 15,
+                CategoriaId = 4,
+                EstaActivo = true,
+                ImagenUrl = "images/USB.webp"
+            },
+            new Producto
+            {
+                ProductoId = 5,
+                Nombre = "Marcador Permanente Negro",
+                Descripcion = "Punta gruesa, secado rápido.",
+                Precio = 65.00m,
+                Stock = 4,
+                CategoriaId = 2,
+                EstaActivo = true,
+                ImagenUrl = "Marcador.webp"
+            }
+        );
+
     }
 
 }
