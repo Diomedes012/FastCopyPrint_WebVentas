@@ -9,7 +9,7 @@ using MudBlazor.Services;
 
 namespace FastCopyPrint_WebVentas
 {
-    public class Program
+    public static class Program
     {
         // CAMBIO 1: Cambiar 'void' a 'async Task' para permitir el await del seeder
         public static async Task Main(string[] args)
