@@ -1,0 +1,121 @@
+﻿@page "/cliente/mis-compras"
+
+@using FastCopyPrint_Ventas.Models
+@using FastCopyPrint_WebVentas.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using MudBlazor
+
+@inject VentasService ventasService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <MudText Typo="Typo.h4" Class="mb-4">Mis Compras</MudText>
+
+    @if (cargando)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        <MudTable Items="@listaVentas" Dense="true" Hover="true" Striped="true" Elevation="4">
+
+            <ToolBarContent>
+                <MudText Typo="Typo.h6" Color="Color.Primary">
+                    <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Class="mr-2 mb-n1" /> Mis Pedidos
+                </MudText>
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>N° Pedido</MudTh>
+                <MudTh>Fecha</MudTh>
+                <MudTh>Total</MudTh>
+                <MudTh>Estado</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="N° Pedido">@context.VentaId</MudTd>
+                <MudTd DataLabel="Fecha">@context.FechaVenta.ToString("dd/MM/yyyy HH:mm")</MudTd>
+
+                <MudTd DataLabel="Total">
+                    <strong>@context.TotalVenta.ToString("C2")</strong>
+                </MudTd>
+
+                <MudTd DataLabel="Estado">
+                    <MudChip T="string" Color="@GetColorEstado(context.EstadoVenta)" Size="Size.Small">
+                        @context.EstadoVenta
+                    </MudChip>
+                </MudTd>
+            </RowTemplate>
+
+            <PagerContent>
+                <MudTablePager />
+            </PagerContent>
+        </MudTable>
+
+        @if (listaVentas.Count == 0 && !cargando)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-4">Aún no has realizado ninguna compra.</MudAlert>
+        }
+    }
+</MudContainer>
+
+@code {
+    private List<Venta> listaVentas = new();
+    private bool cargando = true;
+    private string userId = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuario();
+        await CargarDatos();
+    }
+
+    private async Task CargarUsuario()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+        }
+    }
+
+    private async Task CargarDatos()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                cargando = false;
+                return;
+            }
+
+            cargando = true;
+            // Filtramos las ventas donde el UsuarioId del Cliente coincida con el usuario logueado
+            listaVentas = await ventasService.Listar(v => v.Cliente.UsuarioId == userId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error al cargar historial: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private Color GetColorEstado(string estado)
+    {
+        return estado switch
+        {
+            "Completada" => Color.Success,
+            "Anulada" => Color.Error,
+            "Pendiente" => Color.Warning,
+            _ => Color.Default
+        };
+    }
+}
