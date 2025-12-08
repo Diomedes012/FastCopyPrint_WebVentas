@@ -16,13 +16,13 @@ public class VentaService(IDbContextFactory<ApplicationDbContext> dbFactory)
             .FirstOrDefaultAsync(c => c.ClienteId == clienteId);
 
         if (carrito == null || !carrito.Items.Any())
-            throw new Exception("El carrito está vacío.");
+            throw new InvalidOperationException("El carrito está vacío.");
 
         var metodoPagoDb = await context.MetodosPago
             .FirstOrDefaultAsync(m => m.Nombre == nombreMetodoPago);
 
         if (metodoPagoDb == null)
-            throw new Exception("Método de pago no válido.");
+            throw new ArgumentException("Método de pago no válido.");
 
         var cliente = await context.Clientes.FindAsync(clienteId);
         if (cliente != null)
@@ -46,7 +46,7 @@ public class VentaService(IDbContextFactory<ApplicationDbContext> dbFactory)
         foreach (var item in carrito.Items)
         {
             if (item.Producto.Stock < item.Cantidad)
-                throw new Exception($"Stock insuficiente para el producto: {item.Producto.Nombre}");
+                throw new InvalidOperationException($"Stock insuficiente para el producto: {item.Producto.Nombre}");
 
             var detalle = new VentaDetalle
             {

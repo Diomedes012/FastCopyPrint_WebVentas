@@ -54,16 +54,6 @@ public class CarritoService(IDbContextFactory<ApplicationDbContext> dbFactory)
     public async Task<bool> EliminarItemDelCarrito(int carritoId, int productoId)
     {
         await using var Context = await dbFactory.CreateDbContextAsync();
-        /* var carritoItem = await Context.CarritoItems
-             .FirstOrDefaultAsync(ci => ci.CarritoId == carritoId && ci.ProductoId == productoId);
-         if (carritoItem == null)
-         {
-             return false; // Item no encontrado
-         }
-         Context.CarritoItems.Remove(carritoItem);
-         await Context.SaveChangesAsync();
-         return true;*/
-
         var filasAfectadas = await Context.CarritoItems
             .Where(ci => ci.CarritoId == carritoId && ci.ProductoId == productoId)
             .ExecuteDeleteAsync();
@@ -95,15 +85,6 @@ public class CarritoService(IDbContextFactory<ApplicationDbContext> dbFactory)
     public async Task<bool> LimpiarCarritodeCompras(int carritoId)
     {
         await using var Context = await dbFactory.CreateDbContextAsync();
-        /*var carrito = await Context.Carritos
-            .Include(c => c.Items)
-            .FirstOrDefaultAsync(c => c.CarritoId == carritoId);
-        if (carrito == null)
-        {
-            return false; // Carrito no encontrado
-        }
-        Context.CarritoItems.RemoveRange(carrito.Items);
-        await Context.SaveChangesAsync();*/
         await Context.CarritoItems
             .Where(ci => ci.CarritoId == carritoId)
             .ExecuteDeleteAsync();
