@@ -113,6 +113,7 @@ public class VentasService(IDbContextFactory<ApplicationDbContext> factory)
         await using var contexto = await factory.CreateDbContextAsync();
         return await contexto.Ventas
             .Include(v => v.Cliente)
+                .ThenInclude(u => u.Usuario)
             .Include(v => v.Vendedor)
             .Include(v => v.MetodoPago)
             .Where(criterio)
