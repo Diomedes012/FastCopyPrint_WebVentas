@@ -10,13 +10,13 @@ namespace FastCopyPrint_WebVentas.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
+            throw new NotImplementedException();
         }
     }
 }
