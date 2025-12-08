@@ -175,7 +175,7 @@
             var carrito = await CarritoService.ObtenerCarritoPorClienteIdAsync(clienteId);
             if (carrito != null)
             {
-                cantidadItemsCarrito = carrito.Items.Sum(i => i.Cantidad);
+                cantidadItemsCarrito = carrito.Items?.Sum(i => i.Cantidad) ?? 0;
                 await InvokeAsync(StateHasChanged);
             }
         }
