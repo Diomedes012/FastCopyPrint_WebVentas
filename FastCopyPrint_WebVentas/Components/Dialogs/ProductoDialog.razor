@@ -157,7 +157,7 @@
         {
             if (archivoSubido != null)
             {
-                var carpetaDestino = Path.Combine(Environment.WebRootPath, "imagenes_productos");
+                var carpetaDestino = Path.Combine(Environment.WebRootPath, "images");
                 
                 if (!Directory.Exists(carpetaDestino)) Directory.CreateDirectory(carpetaDestino);
 
@@ -168,7 +168,7 @@
                 await using var streamArchivo = new FileStream(rutaCompleta, FileMode.Create);
                 await archivoSubido.OpenReadStream(MaxFileSize).CopyToAsync(streamArchivo);
 
-                Producto.ImagenUrl = $"/imagenes_productos/{nombreArchivo}";
+                Producto.ImagenUrl = $"/images/{nombreArchivo}";
             }
 
             MudDialog.Close(DialogResult.Ok(Producto));
