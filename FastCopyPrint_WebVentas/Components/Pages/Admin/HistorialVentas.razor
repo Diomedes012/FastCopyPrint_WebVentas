@@ -1,5 +1,6 @@
 ﻿@page "/admin/ventas"
 
+@using Microsoft.AspNetCore.Authorization
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using FastCopyPrint_WebVentas.Components.Dialogs
@@ -10,6 +11,9 @@
 @inject ISnackbar Snackbar
 
 @rendermode InteractiveServer
+
+@attribute [Authorize(Roles = "Encargado")]
+
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
 

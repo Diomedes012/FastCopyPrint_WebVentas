@@ -1,5 +1,6 @@
 ﻿@page "/admin/categorias"
 
+@using Microsoft.AspNetCore.Authorization
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using FastCopyPrint_WebVentas.Components.Dialogs
@@ -8,6 +9,8 @@
 @inject CategoriasService categoriasService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+
+@attribute [Authorize(Roles = "Encargado")]
 
 @rendermode InteractiveServer
 

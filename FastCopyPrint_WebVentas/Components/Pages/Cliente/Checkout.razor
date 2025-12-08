@@ -1,5 +1,6 @@
 ﻿@page "/checkout"
-@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using FastCopyPrint_WebVentas.Data
@@ -15,6 +16,11 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject UserManager<ApplicationUser> UserManager
 @inject IDbContextFactory<ApplicationDbContext> DbFactory
+
+@rendermode InteractiveServer
+
+@attribute [Authorize(Roles = "Cliente")]
+
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-8 mb-8">
     <MudText Typo="Typo.h4" Class="mb-6" Color="Color.Inherit">

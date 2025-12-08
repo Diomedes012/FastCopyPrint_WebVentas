@@ -1,5 +1,6 @@
 ﻿@page "/cliente/mis-compras"
 
+@using Microsoft.AspNetCore.Authorization
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using Microsoft.AspNetCore.Components.Authorization
@@ -9,6 +10,9 @@
 @inject VentasService ventasService
 @inject ISnackbar Snackbar
 @inject AuthenticationStateProvider AuthenticationStateProvider
+
+@attribute [Authorize(Roles = "Cliente")]
+
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
 

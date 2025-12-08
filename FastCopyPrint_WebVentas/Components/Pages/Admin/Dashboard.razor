@@ -1,11 +1,14 @@
 ﻿@page "/admin/dashboard"
 
+@using Microsoft.AspNetCore.Authorization
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using FastCopyPrint_Ventas.Models
 @using MudBlazor
 
 @inject DashboardService dashboardService
+
+@attribute [Authorize(Roles = "Encargado")]
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 

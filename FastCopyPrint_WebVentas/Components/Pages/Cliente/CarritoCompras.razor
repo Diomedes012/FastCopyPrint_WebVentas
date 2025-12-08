@@ -1,5 +1,6 @@
 ﻿@page "/carrito"
-@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
 @using FastCopyPrint_Ventas.Models
 @using FastCopyPrint_WebVentas.Services
 @using MudBlazor
@@ -8,6 +9,10 @@
 @inject NavigationManager NavManager
 @inject ISnackbar Snackbar
 @implements IDisposable
+
+@attribute [Authorize(Roles = "Cliente, Encargado")]
+
+@rendermode InteractiveServer
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-8 mb-8">
 
