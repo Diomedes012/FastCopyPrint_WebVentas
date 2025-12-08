@@ -88,7 +88,11 @@
                 </MudTd>
 
                 <MudTd DataLabel="Estado">
-                    <MudSwitch T="bool" Value="@context.EstaActivo" Color="Color.Primary" ReadOnly="true" Size="Size.Small" />
+                    <MudSwitch T="bool"
+                               Value="@context.EstaActivo"
+                               ValueChanged="@((bool nuevoEstado) => CambiarEstado(context, nuevoEstado))"
+                               Color="Color.Primary"
+                               Size="Size.Small" />
                 </MudTd>
 
                 <MudTd DataLabel="Acciones" Style="text-align:center">
@@ -156,15 +160,22 @@
             var data = result.Data as Producto;
             if (data != null)
             {
-                var exito = await productosService.Guardar(data);
-                if (exito)
+                try
                 {
-                    Snackbar.Add("Producto guardado", Severity.Success);
-                    await CargarDatos();
+                    var exito = await productosService.Guardar(data);
+                    if (exito)
+                    {
+                        Snackbar.Add("Producto guardado", Severity.Success);
+                        await CargarDatos();
+                    }
+                    else
+                    {
+                        Snackbar.Add("Error al guardar", Severity.Error);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Snackbar.Add("Error al guardar", Severity.Error);
+                    Snackbar.Add(ex.Message, Severity.Warning);
                 }
             }
         }
@@ -209,6 +220,32 @@
             {
                 Snackbar.Add("No se puede eliminar (probablemente tiene ventas)", Severity.Error);
             }
+        }
+    }
+
+    private async Task CambiarEstado(Producto prod, bool nuevoEstado)
+    {
+        try
+        {
+            prod.EstaActivo = nuevoEstado;
+
+            var exito = await productosService.Guardar(prod);
+
+            if (exito)
+            {
+                var mensaje = nuevoEstado ? "Producto activado" : "Producto desactivado";
+                Snackbar.Add(mensaje, Severity.Success);
+            }
+            else
+            {
+                prod.EstaActivo = !nuevoEstado;
+                Snackbar.Add("Error al actualizar estado", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            prod.EstaActivo = !nuevoEstado;
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
     }
 }
